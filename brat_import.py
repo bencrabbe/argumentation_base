@@ -13,13 +13,15 @@ def tokenize_text(txtfile):
     Args:
       txtfile (str) : path to a raw text file
     Returns:
-      list of tokens. a token is a triple (charidx,charidx,idx,string)
-      with begin and end char indexes in the text
+      list of list tokens. a token is a triple (charidx,charidx,idx,string)
+      with begin and end char indexes in the text. This is a list of
+      the paragraphs in the original text. Each paragraph is a list of tokens
     """
     tt = TweetTokenizer()
     with open(txtfile) as infile:
         rawlist = re.split(r'(\s+)', infile.read())
-        toklist = [ ]
+        toklist = [ ] #full essay
+        current = [ ] #current paragraph
         idx     = 0
         cidx    = 0
         for elt in rawlist:
@@ -29,11 +31,15 @@ def tokenize_text(txtfile):
                 for subt in subtokens: 
                     subtok = (cidx,cidx+len(subt),idx,subt)
                     idx  += 1
-                    toklist.append(subtok)
+                    current.append(subtok)
                     cidx += len(subt)
+            elif '\n' in elt:
+                toklist.append(current)
+                current = [ ]
             else:
                 cidx += len(elt)
-                
+        if current:
+            toklist.append(current)
         return toklist
 
     
@@ -45,7 +51,7 @@ def read_annotations(annfile):
     Returns:
        dict. A dictionary storing the annotations
 
-    @todo Stances are not taken into account
+    @todo Stances are not taken into account yet
     """
     spans = []
     rels  = []
@@ -59,11 +65,12 @@ def read_annotations(annfile):
                 rels.append({"name":elts[0],"src":elts[1].split(':')[-1],"tgt":elts[2].split(':')[-1]})
         return {"spans":spans,"rels":rels}
 
+    
 def char2tokens(tokens,annotations):
     """
     This replaces char indexing by token indexing in spans and in relations
     Args:
-      tokens  (list of tuples)
+      tokens  (list of list of tuples)
       annotations (dictionary)
     Returns:
        dict. tokens and annotations reindexed on tokens only
@@ -73,11 +80,12 @@ def char2tokens(tokens,annotations):
         start,end = span["start"],span["end"]
         newstart = -1
         newend   = -1
-        for (sidx,eidx,widx,str) in tokens:
-            if start >= sidx and start <= eidx:
-                newstart = widx
-            if end >= sidx and end <= eidx:
-                newend = widx
+        for paragraph in tokens:
+            for (sidx,eidx,widx,str) in paragraph:
+                if start >= sidx and start <= eidx:
+                    newstart = widx
+                if end >= sidx and end <= eidx:
+                    newend = widx
             if newstart >= 0 and newend >= 0:
                 break
         span.update({"start":newstart})
@@ -92,7 +100,7 @@ def char2tokens(tokens,annotations):
                 rel["tgt"] = (span["start"],span["end"])
 
     #update tokens
-    tokens = [{'idx':idx,'str':elt} for  (_,_,idx,elt) in tokens]
+    tokens = [[{'idx':idx,'str':elt} for  (_,_,idx,elt) in parag] for parag in tokens]
     annotations['tokens'] = tokens
 
     #cleanup spans
@@ -115,9 +123,10 @@ def annotate_NER(annotations):
         for idx in range(start+1,end):
             tagdict[idx] = f'I-{label}'
     
-    for token in annotations['tokens']:
-        idx = token['idx']
-        token['arg'] = tagdict.get(idx,'O')
+    for parag in annotations['tokens']:
+        for token in parag:
+            idx = token['idx']
+            token['arg'] = tagdict.get(idx,'O')
     
     return annotations
 

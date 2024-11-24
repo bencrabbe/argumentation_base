@@ -23,7 +23,23 @@ mv *.dat aae_split
 python make_aae_split.py
 rm -Rf aae_split
 
+mkdir aae_brat/train
+mkdir aae_brat/dev
+mkdir aae_brat/test
+for file in $(cat aae_brat/train.split)
+do
+    mv aae_brat/$file aae_brat/train/$file;
+done
 
+for file in $(cat aae_brat/dev.split)
+do
+     mv aae_brat/$file aae_brat/dev/$file;
+done
+
+for file in $(cat aae_brat/test.split)
+do
+     mv aae_brat/$file aae_brat/test/$file;
+done
 
 
 #AbstRCT
@@ -44,4 +60,19 @@ python brat_import.py abstrct_brat/test/mixed_test/
 mv *.json abstrct_brat/test/mixed_test/
 
 
+#merge data sets as json generic files 
+
+python merge_data.py aae_brat/train aae_train.json 
+python merge_data.py aae_brat/dev aae_dev.json 
+python merge_data.py aae_brat/test aae_test.json 
+
+python merge_data.py abstrct_brat/train/neoplasm_train abstrct_neoplasm_train.json 
+python merge_data.py abstrct_brat/dev/neoplasm_dev abstrct_neoplasm_dev.json 
+python merge_data.py abstrct_brat/test/neoplasm_test abstrct_neoplasm_test.json 
+python merge_data.py abstrct_brat/test/glaucoma_test abstrct_glaucoma_test.json 
+python merge_data.py abstrct_brat/test/mixed_test abstrct_mixed_test.json 
+
+#cleanup
+rm -Rf aae_brat
+rm -Rf abstrct_brat
 

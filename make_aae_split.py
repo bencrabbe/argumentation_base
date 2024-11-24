@@ -40,7 +40,7 @@ def get_filenames(jsondir,conllfilename,threshold=0.95):
         if filename.endswith('json'):
             with open(os.path.join(jsondir,filename)) as injson:
                 annotations = json.loads(injson.read())
-                prop = commonvocab([ token['str'] for token in annotations["tokens"] ],vocab)
+                prop = commonvocab([ token['str'] for paragraph in annotations["tokens"] for token in paragraph ],vocab)
                 if prop >= threshold:
                     #print("In",filename,"with",prop)
                     selected_files.append(filename)
@@ -51,18 +51,16 @@ def get_filenames(jsondir,conllfilename,threshold=0.95):
     return selected_files,other_files
 
 
-def write_split(train,dev,test,splitfilename):
+def write_split(train,dev,test,outdirname):
+    
+    with open(os.path.join(outdirname,'train.split'),'w') as outfile:
+        outfile.write('\n'.join(list(train)))
 
-    splitdict = {
-                 'train':sorted(list(train)),
-                 'dev'  :sorted(list(dev)),
-                 'test' :sorted(list(test))
-                 }
-    
-    with open(splitfilename,'w') as outfile:
-        outfile.write(json.dumps(splitdict))
+    with open(os.path.join(outdirname,'dev.split'),'w') as outfile:
+        outfile.write('\n'.join(list(dev)))
         
-    
+    with open(os.path.join(outdirname,'test.split'),'w') as outfile:
+        outfile.write('\n'.join(list(test)))
 
 
 if __name__ == '__main__':
@@ -72,5 +70,5 @@ if __name__ == '__main__':
     trainfilesB = set(othertest)-set(dev_files)
     assert(len(trainfilesA) == len(trainfilesB))
 
-    write_split(trainfilesA,dev_files,test_files,"aae_brat/train_dev_test_split.json")
+    write_split(trainfilesA,dev_files,test_files,"aae_brat")
     
