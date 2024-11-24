@@ -74,9 +74,9 @@ def char2tokens(tokens,annotations):
         newstart = -1
         newend   = -1
         for (sidx,eidx,widx,str) in tokens:
-            if start >= sidx and start < eidx:
+            if start >= sidx and start <= eidx:
                 newstart = widx
-            if end >= sidx and end < eidx:
+            if end >= sidx and end <= eidx:
                 newend = widx
             if newstart >= 0 and newend >= 0:
                 break
@@ -117,7 +117,7 @@ def annotate_NER(annotations):
     
     for token in annotations['tokens']:
         idx = token['idx']
-        token['ner'] = tagdict.get(idx,'O')
+        token['arg'] = tagdict.get(idx,'O')
     
     return annotations
 
@@ -134,6 +134,17 @@ def convert_directory(dirname):
             annotations = annotate_NER(annotations)
             with open(f'{prefix}.json','w') as outfile:
                 outfile.write(json.dumps(annotations))
+
+
+#annpath  = "abstrct_brat/test/mixed_test/10526263.ann"
+#textpath = "abstrct_brat/test/mixed_test/10526263.txt"
+#annotations = read_annotations(annpath)
+#tokens      = tokenize_text(textpath)
+#annotations = char2tokens(tokens,annotations)
+#annotations = annotate_NER(annotations)
+#print(annotations)
+
+
 
 if __name__ == '__main__':
     import sys

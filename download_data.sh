@@ -1,3 +1,5 @@
+#creates the json files in the main directories
+
 #Argument Annotated Essays
 wget https://tudatalib.ulb.tu-darmstadt.de/bitstream/handle/tudatalib/2422/ArgumentAnnotatedEssays-2.0.zip
 unzip ArgumentAnnotatedEssays-2.0.zip
@@ -13,10 +15,16 @@ mv essay*.json aae_brat
 
 #split
 mkdir aae_split
-wget https://github.com/UKPLab/acl2017-neural_end2end_am/tree/master/data/conll/Essay_Level/train.dat
-wget https://github.com/UKPLab/acl2017-neural_end2end_am/tree/master/data/conll/Essay_Level/dev.dat
-wget https://github.com/UKPLab/acl2017-neural_end2end_am/tree/master/data/conll/Essay_Level/test.dat
+wget https://raw.githubusercontent.com/UKPLab/acl2017-neural_end2end_am/refs/heads/master/data/conll/Essay_Level/train.dat
+wget https://raw.githubusercontent.com/UKPLab/acl2017-neural_end2end_am/refs/heads/master/data/conll/Essay_Level/dev.dat
+wget https://raw.githubusercontent.com/UKPLab/acl2017-neural_end2end_am/refs/heads/master/data/conll/Essay_Level/test.dat
 mv *.dat aae_split
+
+python make_aae_split.py
+rm -Rf aae_split
+
+
+
 
 #AbstRCT
 git clone https://gitlab.com/tomaye/abstrct.git
@@ -34,3 +42,6 @@ python brat_import.py abstrct_brat/test/glaucoma_test/
 mv *.json abstrct_brat/test/glaucoma_test/
 python brat_import.py abstrct_brat/test/mixed_test/
 mv *.json abstrct_brat/test/mixed_test/
+
+
+
