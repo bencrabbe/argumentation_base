@@ -35,6 +35,8 @@ The script `view_data.py` provides a pretty printing function for exploring the 
 
 ## Evaluation (todo)
 
+We reuse current practice in evaluation for argument mining described in [Eger et al (2017)](https://aclanthology.org/P17-1002/) and in [Persing and Ng (2016).](https://aclanthology.org/N16-1164.pdf)
+
 - strict evaluation
 - relaxed evaluation
 - fuzzy evaluation

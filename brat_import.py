@@ -5,6 +5,8 @@
 # relations are triples (src node, tgt node, type)
 #     examples are ( (7,12), (0,5), attack)
 
+#todo check token/span indexing
+
 import re
 from nltk.tokenize import TweetTokenizer
 def tokenize_text(txtfile):
