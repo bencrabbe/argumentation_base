@@ -21,7 +21,9 @@ def tokenize_text(txtfile):
     """
     tt = TweetTokenizer()
     with open(txtfile) as infile:
-        rawlist = re.split(r'(\s+)', infile.read())
+        intxt =  infile.read()
+        rawlist = re.split(r'(\s+)',intxt)
+    
         toklist = [ ] #full essay
         current = [ ] #current paragraph
         idx     = 0
@@ -38,6 +40,7 @@ def tokenize_text(txtfile):
             elif '\n' in elt:
                 toklist.append(current)
                 current = [ ]
+                cidx += len(elt)
             else:
                 cidx += len(elt)
         if current:
@@ -83,13 +86,21 @@ def char2tokens(tokens,annotations):
         newstart = -1
         newend   = -1
         for paragraph in tokens:
-            for (sidx,eidx,widx,str) in paragraph:
-                if start >= sidx and start <= eidx:
+            for (sidx,eidx,widx,string) in paragraph:
+                #print("span",start,end)
+                #print('>',sidx,string,eidx)
+                if start >= sidx and start < eidx:
                     newstart = widx
-                if end >= sidx and end <= eidx:
+                    #print('  ##start match')
+                if end >=sidx and end <= eidx :
                     newend = widx
+                    #print('  @@end match')
+
             if newstart >= 0 and newend >= 0:
                 break
+        if newstart == -1 or newend == -1:
+            #print('failed',start,end)
+            raise Exception(f'warning remapping failed {(newstart,newend)}: span {span}\n{tokens}')
         span.update({"start":newstart})
         span.update({"end" : newend})
         
@@ -138,17 +149,25 @@ import json
 def convert_directory(dirname):
     for filename in os.listdir(dirname):
         if filename.endswith('.ann'):
-            prefix,suffix = filename.split('.')
-            annotations = read_annotations(os.path.join(dirname,filename))
-            tokens      = tokenize_text((os.path.join(dirname,f'{prefix}.txt')))   
-            annotations = char2tokens(tokens,annotations)
-            annotations = annotate_NER(annotations)
-            with open(f'{prefix}.json','w') as outfile:
-                outfile.write(json.dumps(annotations))
+            try:
+                prefix,suffix = filename.split('.')
+                annotations = read_annotations(os.path.join(dirname,filename))
+                tokens      = tokenize_text((os.path.join(dirname,f'{prefix}.txt')))   
+                annotations = char2tokens(tokens,annotations)
+                annotations = annotate_NER(annotations)
+                with open(f'{prefix}.json','w') as outfile:
+                    outfile.write(json.dumps(annotations))
+            except Exception as e:
+                print(e,filename)
+                exit()
 
 
 #annpath  = "abstrct_brat/test/mixed_test/10526263.ann"
 #textpath = "abstrct_brat/test/mixed_test/10526263.txt"
+
+#annpath  = "aae_brat/essay001.ann"
+#textpath = "aae_brat/essay001.txt"
+
 #annotations = read_annotations(annpath)
 #tokens      = tokenize_text(textpath)
 #annotations = char2tokens(tokens,annotations)
@@ -160,4 +179,4 @@ def convert_directory(dirname):
 if __name__ == '__main__':
     import sys
     convert_directory(sys.argv[1])
-    
+    #pass

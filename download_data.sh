@@ -73,6 +73,6 @@ python merge_data.py abstrct_brat/test/glaucoma_test abstrct_glaucoma_test.json
 python merge_data.py abstrct_brat/test/mixed_test abstrct_mixed_test.json 
 
 #cleanup
-rm -Rf aae_brat
-rm -Rf abstrct_brat
+#rm -Rf aae_brat
+#rm -Rf abstrct_brat
 

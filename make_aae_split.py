@@ -17,9 +17,6 @@ def commonvocab(jsonvocab,vocab):
     """
     jsonvocab = set(jsonvocab)
     vocab     = set(vocab)
-    #print(jsonvocab)
-    #print(vocab)
-    #print()
     counts    = 0
     for element in jsonvocab:
         if element in vocab:
@@ -42,7 +39,7 @@ def get_filenames(jsondir,conllfilename,threshold=0.95):
                 annotations = json.loads(injson.read())
                 prop = commonvocab([ token['str'] for paragraph in annotations["tokens"] for token in paragraph ],vocab)
                 if prop >= threshold:
-                    #print("In",filename,"with",prop)
+                    print("In",filename,"with",prop)
                     selected_files.append(filename)
                 else:
                     #print("Out",filename,"with",prop)
