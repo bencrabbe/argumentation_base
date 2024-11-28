@@ -8,12 +8,13 @@
 #todo check token/span indexing
 
 import re
-from nltk.tokenize import TweetTokenizer
-def tokenize_text(txtfile):
+from nltk.tokenize import word_tokenize,TweetTokenizer
+def tokenize_text(txtfile,method='word'):
     """
     Splits the text into tokens and returns a list of tokens
     Args:
       txtfile (str) : path to a raw text file
+      method  (str) : 'word' or tweet'
     Returns:
       list of list tokens. a token is a triple (charidx,charidx,idx,string)
       with begin and end char indexes in the text. This is a list of
@@ -31,16 +32,16 @@ def tokenize_text(txtfile):
         for elt in rawlist:
             if not elt.isspace():
                 #separates punctuation from main words
-                subtokens = tt.tokenize(elt)
+                subtokens = tt.tokenize(elt) if method == 'tweet' else word_tokenize(elt) 
                 for subt in subtokens: 
                     subtok = (cidx,cidx+len(subt),idx,subt)
                     idx  += 1
                     current.append(subtok)
-                    cidx += len(subt)
+                    cidx += len(subt) 
             elif '\n' in elt:
                 toklist.append(current)
                 current = [ ]
-                cidx += len(elt)
+                cidx += len(elt) 
             else:
                 cidx += len(elt)
         if current:
@@ -152,7 +153,7 @@ def convert_directory(dirname):
             try:
                 prefix,suffix = filename.split('.')
                 annotations = read_annotations(os.path.join(dirname,filename))
-                tokens      = tokenize_text((os.path.join(dirname,f'{prefix}.txt')))   
+                tokens      = tokenize_text((os.path.join(dirname,f'{prefix}.txt')),method='tweet')   
                 annotations = char2tokens(tokens,annotations)
                 annotations = annotate_NER(annotations)
                 with open(f'{prefix}.json','w') as outfile:
@@ -162,8 +163,8 @@ def convert_directory(dirname):
                 exit()
 
 
-#annpath  = "abstrct_brat/test/mixed_test/10526263.ann"
-#textpath = "abstrct_brat/test/mixed_test/10526263.txt"
+#annpath  = "abstrct_brat/train/neoplasm_train/20842129.ann"
+#textpath = "abstrct_brat/train/neoplasm_train/20842129.txt"
 
 #annpath  = "aae_brat/essay001.ann"
 #textpath = "aae_brat/essay001.txt"
@@ -175,8 +176,7 @@ def convert_directory(dirname):
 #print(annotations)
 
 
-
 if __name__ == '__main__':
     import sys
     convert_directory(sys.argv[1])
-    #pass
+    pass

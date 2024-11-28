@@ -10,23 +10,21 @@ def connl2vocab(conllfilename):
                 vocab.append(token)
         return set(vocab)
 
-def commonvocab(jsonvocab,vocab):
+def commonvocab(jsonvocab,vocab,verbose=False):
     """
     Returns the proportion of vocab in the json file found in the
     reference vocab (setwise computation)
     """
     jsonvocab = set(jsonvocab)
     vocab     = set(vocab)
-    counts    = 0
-    for element in jsonvocab:
-        if element in vocab:
-            counts += 1
-    return counts/len(jsonvocab)
+    common    = jsonvocab & vocab
+    if verbose:
+        print('missing words',[elt for elt in (jsonvocab-vocab)])
+    return len(common)/len(jsonvocab)
                 
 import os
 import json
-
-def get_filenames(jsondir,conllfilename,threshold=0.95):
+def get_filenames(jsondir,conllfilename,threshold=0.955):
     """
     Gets the json filenames that are part of the conllfile
     """
@@ -41,12 +39,9 @@ def get_filenames(jsondir,conllfilename,threshold=0.95):
                 if prop >= threshold:
                     print("In",filename,"with",prop)
                     selected_files.append(filename)
-                else:
-                    #print("Out",filename,"with",prop)
-                    other_files.append(filename)
+                    #print( commonvocab([ token['str'] for paragraph in annotations["tokens"] for token in paragraph ],vocab,verbose=True) )
                     
-    return selected_files,other_files
-
+    return selected_files
 
 def write_split(train,dev,test,outdirname):
     
@@ -61,11 +56,10 @@ def write_split(train,dev,test,outdirname):
 
 
 if __name__ == '__main__':
-    dev_files,otherdev  = get_filenames("aae_brat","aae_split/dev.dat")
-    test_files,othertest = get_filenames("aae_brat","aae_split/test.dat")
-    trainfilesA = set(otherdev)-set(test_files)
-    trainfilesB = set(othertest)-set(dev_files)
-    assert(len(trainfilesA) == len(trainfilesB))
-
-    write_split(trainfilesA,dev_files,test_files,"aae_brat")
+    all_files   = set([filename for filename in os.listdir("aae_brat") if filename.endswith('json')])
+    dev_files   = get_filenames("aae_brat","aae_split/dev.dat")
+    test_files  = get_filenames("aae_brat","aae_split/test.dat")
+    trainfiles = set(all_files) - set(dev_files) - set(test_files)
+    print(f'split train:{len(trainfiles)}, dev:{len(dev_files)}, test:{len(test_files)}')
+    write_split(trainfiles,dev_files,test_files,"aae_brat")
     
