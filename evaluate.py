@@ -3,10 +3,9 @@ def eval_spans(pred_spans,ref_spans):
     Receives two lists of spans and returns a precision, recall,
     f-score
     Args:
-       pred_spans (list): a list of spans (a span is a dictionary)
-       ref_spans  (list): a list of spans (a span is a dictionary)
-    KwArgs:
-      labeled: whether the span labels are take into account in the evaluation
+       pred_spans (list): a list of spans (a span is a tuple)
+       ref_spans  (list): a list of spans (a span is a tuple)
+
     Returns:
        (P,R,F) a triple of floats
     """
@@ -18,6 +17,73 @@ def eval_spans(pred_spans,ref_spans):
     recll = len(pred_correct) /  len(ref_spans)
     f1    = (2 * prec * recll) / (prec + recll)
     return (prec,recll,f1)
+
+
+def eval_rels(pred_rels,ref_rels):
+   
+    pred_correct = pred_rels & ref_rels
+    prec  = len(pred_correct) /  len(pred_rels)
+    recll = len(pred_correct) /  len(ref_rels)
+    f1    = (2 * prec * recll) / (prec + recll)
+    return (prec,recll,f1)
+
+
+def get_rels(annotations,labeled=True):
+    """
+    Gets the rels from the annotations and converts them to span
+    Args:
+       annotations (dict) : the annotation dict
+    KwArgs:
+       labeled     (bool) : whether the relations are labeled or not 
+    Returns:
+       a list of rels as tuples
+    Raises:
+       Exception if rels are not in the annotations
+    """
+    if 'rels' not in annotations:
+        raise Exception('Tried to extract relations from annotation but it failed. Aborting.')
+    
+    if labeled:
+        rels = { (tuple(rel['src']),tuple(rel['tgt']), rel['name'])  for rel in annotations['rels'] } 
+    else:
+        rels = { (tuple(rel['src']),tuple(rel['tgt']))  for rel in annotations['rels'] } 
+
+    return rels
+
+
+def align_rels(pred_rels,ref_rels):
+    """
+    Aligns the node rels in the rels with node spans in the ref
+    """
+    arels = [  ]
+    for prel in pred_rels:
+        src = False
+        tgt = False
+        psrc,ptgt,*plabel = prel
+        psrc_tokens = set(range(psrc[0],psrc[1]+1))
+        ptgt_tokens = set(range(ptgt[0],ptgt[1]+1))
+        for rrel in ref_rels:
+            rsrc,rtgt,*rlabel = rrel
+            rsrc_tokens = set(range(rsrc[0],rsrc[1]+1))
+            rtgt_tokens = set(range(rtgt[0],rtgt[1]+1))
+
+            if len(psrc_tokens & rsrc_tokens) > (len(rsrc_tokens) / 2):
+                src = rsrc
+            
+            if len(ptgt_tokens & rtgt_tokens) > (len(rtgt_tokens) / 2):
+                tgt = rtgt
+
+        if not src:
+            src = psrc
+        if not tgt:
+            tgt = ptgt
+        if plabel:
+            arels.append((src,tgt,plabel[0]))
+        else:
+            arels.append((src,tgt))
+    return set(arels)
+
+
 
 
 def get_spans(annotations,labeled=True):
@@ -87,6 +153,8 @@ def align_spans(pred_spans,ref_spans):
     return aspans
 
 
+
+
 def eval_dataset(pred_annotations,ref_annotations,labeled=True):
     """
     Performs spans and relation evaluations for the given annotations dictionaries.
@@ -108,21 +176,41 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True):
             f += z
         return p/N,r/N,f/N
 
-    strict_scores  = [ ]
-    aligned_scores = [ ]
+    strict_span_scores  = [ ]
+    aligned_span_scores = [ ]
+    strict_rel_scores  = [ ]
+    aligned_rel_scores = [ ]
     for pred,ref in zip(pred_annotations,ref_annotations):
         if 'tokens' in pred and 'tokens' in ref:
             pred_spans         = get_spans(pred,labeled)
             ref_spans          = get_spans(ref,labeled)
             aligned_pred_spans = align_spans(pred_spans,ref_spans)
-            strict_scores.append( eval_spans(pred_spans,ref_spans) )
-            aligned_scores.append( eval_spans(aligned_pred_spans,ref_spans) )
+            strict_span_scores.append( eval_spans(pred_spans,ref_spans) )
+            aligned_span_scores.append( eval_spans(aligned_pred_spans,ref_spans) )
+            if 'rels' in pred and 'rels' in ref:
+                pred_rels = get_rels(pred,labeled)
+                ref_rels  = get_rels(ref,labeled)
+                aligned_pred_rels = align_rels(pred_rels,ref_rels)
+                strict_rel_scores.append( eval_rels(pred_rels,ref_rels) )
+                aligned_rel_scores.append( eval_rels(aligned_pred_rels,ref_rels)  )
+                
         else:
             raise Exception('The annotations do not contain a "tokens" field ! aborting.')
-    p,r,f    = avg_metric(strict_scores)
-    ap,ar,af = avg_metric(aligned_scores)
-    return {"spans":{'strict': {'p':p,'r':r,'f':f},'relaxed':{'p':ap,'r':ar,'f':af}}}
+    sp,sr,sf    = avg_metric(strict_span_scores)
+    asp,asr,asf = avg_metric(aligned_span_scores)
+    if strict_rel_scores:
+        rp,rr,rf    = avg_metric(strict_span_scores)
+        arp,arr,arf = avg_metric(aligned_span_scores)
+        return {"spans":{'strict': {'p':sp,'r':sr,'f':sf},'relaxed':{'p':asp,'r':asr,'f':asf}},
+                "rels":{'strict': {'p':rp,'r':rr,'f':rf},'relaxed':{'p':arp,'r':arr,'f':arf}}}
+    else:
+        return {"spans":{'strict': {'p':sp,'r':sr,'f':sf},'relaxed':{'p':asp,'r':asr,'f':asf}}}
 
+
+
+
+
+        
 
 def display_eval(pred_annotations,ref_annotations):
     """
@@ -137,7 +225,8 @@ def display_eval(pred_annotations,ref_annotations):
     
     print(f"""
 
-    STRICT EVALUATION
+********************** SPANS *************************** 
+   STRICT EVALUATION
     > Argument mining spans (unlabeled)
       Precision : {ulabeled['spans']['strict']['p']} 
       Recall    : {ulabeled['spans']['strict']['r']}
@@ -157,7 +246,31 @@ def display_eval(pred_annotations,ref_annotations):
       Recall    : {labeled['spans']['relaxed']['r']} 
       F-score   : {labeled['spans']['relaxed']['f']}
 """)
-       
+
+    if 'rels' in labeled and 'rels' in ulabeled:
+        print(f"""
+
+******************* RELATIONS *************************** 
+   STRICT EVALUATION
+    > Argument mining spans (unlabeled)
+      Precision : {ulabeled['rels']['strict']['p']} 
+      Recall    : {ulabeled['rels']['strict']['r']}
+      F-score   : {ulabeled['rels']['strict']['f']}
+    > Argument mining spans (labeled)
+      Precision : {labeled['rels']['strict']['p']} 
+      Recall    : {labeled['rels']['strict']['r']} 
+      F-score   : {labeled['rels']['strict']['f']}
+
+    RELAXED EVALUATION
+    > Argument mining spans (unlabeled)
+      Precision : {ulabeled['rels']['relaxed']['p']} 
+      Recall    : {ulabeled['rels']['relaxed']['r']}
+      F-score   : {ulabeled['rels']['relaxed']['f']}
+    > Argument mining spans (labeled)
+      Precision : {labeled['rels']['relaxed']['p']} 
+      Recall    : {labeled['rels']['relaxed']['r']} 
+      F-score   : {labeled['rels']['relaxed']['f']}
+""")       
 
 
 
