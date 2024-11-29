@@ -15,6 +15,10 @@ def eval_spans(pred_spans,ref_spans):
     pred_correct = pred_spans & ref_spans
     prec  = len(pred_correct) /  len(pred_spans)
     recll = len(pred_correct) /  len(ref_spans)
+
+    if prec + recll == 0:
+        return (0,0,0)
+
     f1    = (2 * prec * recll) / (prec + recll)
     return (prec,recll,f1)
 
@@ -24,6 +28,10 @@ def eval_rels(pred_rels,ref_rels):
     pred_correct = pred_rels & ref_rels
     prec  = len(pred_correct) /  len(pred_rels)
     recll = len(pred_correct) /  len(ref_rels)
+
+    if prec + recll == 0:
+        return (0,0,0)
+    
     f1    = (2 * prec * recll) / (prec + recll)
     return (prec,recll,f1)
 
@@ -84,7 +92,7 @@ def align_rels(pred_rels,ref_rels,alpha):
     return set(arels)
 
 
-
+from random import random
 
 def get_spans(annotations,labeled=True):
      """
@@ -99,18 +107,21 @@ def get_spans(annotations,labeled=True):
        a set of pred spans as tuples. a set of ref spans as tuples
      """
      if 'spans' in annotations:
+         
          spans = annotations['spans']
-     else:
+
+         #else:
+         
          spans = [ ]
          current_lbl   = ''
          current_start = -1
             
          for paragraph in annotations['tokens']:
              for token in paragraph:
-                 if token['arg'].startswith['B']:
+                 if token['arg'].startswith('B'):
                      current_start = token['idx']
                      current_lbl = token['arg'].split('-')[-1]
-                 elif token['arg'].startswith['I']:
+                 elif token['arg'].startswith('I'):
                      pass
                  else: 
                      if current_lbl:
@@ -181,7 +192,9 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=0.5):
     aligned_span_scores = [ ]
     strict_rel_scores  = [ ]
     aligned_rel_scores = [ ]
+
     for pred,ref in zip(pred_annotations,ref_annotations):
+                    
         if 'tokens' in pred and 'tokens' in ref:
             pred_spans         = get_spans(pred,labeled)
             ref_spans          = get_spans(ref,labeled)
@@ -200,8 +213,8 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=0.5):
     sp,sr,sf    = avg_metric(strict_span_scores)
     asp,asr,asf = avg_metric(aligned_span_scores)
     if strict_rel_scores:
-        rp,rr,rf    = avg_metric(strict_span_scores)
-        arp,arr,arf = avg_metric(aligned_span_scores)
+        rp,rr,rf    = avg_metric(strict_rel_scores)
+        arp,arr,arf = avg_metric(aligned_rel_scores)
         return {"spans":{'strict': {'p':sp,'r':sr,'f':sf},'relaxed':{'p':asp,'r':asr,'f':asf}},
                 "rels":{'strict': {'p':rp,'r':rr,'f':rf},'relaxed':{'p':arp,'r':arr,'f':arf}}}
     else:
@@ -217,8 +230,8 @@ def display_eval(pred_annotations,ref_annotations,alpha=0.5):
         ref_annotations (dict): an annotation dict (possibly missing some keys)
         alpha (float) : threshold of common tokens for approximative matching of spans 
     """
-    labeled  = eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=alpha)
     ulabeled = eval_dataset(pred_annotations,ref_annotations,labeled=False,alpha=alpha)
+    labeled  = eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=alpha)
     
     print(f"""
 
@@ -290,10 +303,10 @@ if __name__ == '__main__':
             preds = json.loads(preds_in.read())
             refs = json.loads(ref_in.read())
             
-            try:
-                display_eval(preds,refs,alpha=args.alpha)
-            except Exception as e:
-                print('[error]',e)
+            #try:
+            display_eval(preds,refs,alpha=args.alpha)
+            #except Exception as e:
+            #    print('[error]',e)
 
             
 
