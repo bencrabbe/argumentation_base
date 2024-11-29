@@ -1,6 +1,6 @@
 # Argumentation base documentation
 
-This repository stores argumentation data in a `json` format that is convenient for machine learning, exchange and evaluation.
+This repository allows to retrieve argumentation data in a `json` format that is convenient for machine learning, exchange and evaluation.
 
 A dataset is a json file. Each dataset is a list of documents and each document is a dictionary with 3 keys:
 
