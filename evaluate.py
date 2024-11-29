@@ -51,9 +51,9 @@ def get_rels(annotations,labeled=True):
     return rels
 
 
-def align_rels(pred_rels,ref_rels):
+def align_rels(pred_rels,ref_rels,alpha):
     """
-    Aligns the node rels in the rels with node spans in the ref
+    Aligns the node rels in the pred with node rels in the ref
     """
     arels = [  ]
     for prel in pred_rels:
@@ -67,10 +67,10 @@ def align_rels(pred_rels,ref_rels):
             rsrc_tokens = set(range(rsrc[0],rsrc[1]+1))
             rtgt_tokens = set(range(rtgt[0],rtgt[1]+1))
 
-            if len(psrc_tokens & rsrc_tokens) > (len(rsrc_tokens) / 2):
+            if len(psrc_tokens & rsrc_tokens) > (alpha*len(rsrc_tokens)):
                 src = rsrc
             
-            if len(ptgt_tokens & rtgt_tokens) > (len(rtgt_tokens) / 2):
+            if len(ptgt_tokens & rtgt_tokens) > (alpha*len(rtgt_tokens)):
                 tgt = rtgt
 
         if not src:
@@ -128,7 +128,7 @@ def get_spans(annotations,labeled=True):
         return { (span['start'],span['end']) for span in spans}
 
 
-def align_spans(pred_spans,ref_spans):
+def align_spans(pred_spans,ref_spans,alpha):
     """
     Align pred spans on ref spans as soon as their overlap is greater than 50%
     Args:
@@ -146,7 +146,7 @@ def align_spans(pred_spans,ref_spans):
             if plabel == rlabel:
                 ptoks = set(range(pstart,pend+1))
                 rtoks = set(range(rstart,rend+1))
-                if len(rtoks & ptoks) > len(rtoks)/2:
+                if len(rtoks & ptoks) > alpha*len(rtoks) :
                     aspans.append(rspan)
         if not added:
             aspans.append(pspan)
@@ -155,14 +155,15 @@ def align_spans(pred_spans,ref_spans):
 
 
 
-def eval_dataset(pred_annotations,ref_annotations,labeled=True):
+def eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=0.5):
     """
     Performs spans and relation evaluations for the given annotations dictionaries.
     At least tokens with BIO annotations are expected in all cases.
     Args:
         pred_annotations (dict): an annotation dict (possibly missing some keys)
         ref_annotations (dict) : an annotation dict (possibly missing some keys)
-        labeled (bool)          : wether span labels are taken into account 
+        labeled (bool)          : wether span labels are taken into account
+        alpha (float)          : threshold for approximative span matching
     Returns dict with evaluation results
     """
     def avg_metric(score_list):
@@ -184,13 +185,13 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True):
         if 'tokens' in pred and 'tokens' in ref:
             pred_spans         = get_spans(pred,labeled)
             ref_spans          = get_spans(ref,labeled)
-            aligned_pred_spans = align_spans(pred_spans,ref_spans)
+            aligned_pred_spans = align_spans(pred_spans,ref_spans,alpha)
             strict_span_scores.append( eval_spans(pred_spans,ref_spans) )
             aligned_span_scores.append( eval_spans(aligned_pred_spans,ref_spans) )
             if 'rels' in pred and 'rels' in ref:
                 pred_rels = get_rels(pred,labeled)
                 ref_rels  = get_rels(ref,labeled)
-                aligned_pred_rels = align_rels(pred_rels,ref_rels)
+                aligned_pred_rels = align_rels(pred_rels,ref_rels,alpha)
                 strict_rel_scores.append( eval_rels(pred_rels,ref_rels) )
                 aligned_rel_scores.append( eval_rels(aligned_pred_rels,ref_rels)  )
                 
@@ -207,21 +208,17 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True):
         return {"spans":{'strict': {'p':sp,'r':sr,'f':sf},'relaxed':{'p':asp,'r':asr,'f':asf}}}
 
 
-
-
-
-        
-
-def display_eval(pred_annotations,ref_annotations):
+def display_eval(pred_annotations,ref_annotations,alpha=0.5):
     """
     Prints on stdout the results of all the possible evaluations for the given annotations dictionaries.
     At least tokens with BIO annotations are expected in all cases.
     Args:
         pred_annotations (dict): an annotation dict (possibly missing some keys)
         ref_annotations (dict): an annotation dict (possibly missing some keys)
+        alpha (float) : threshold of common tokens for approximative matching of spans 
     """
-    labeled  = eval_dataset(pred_annotations,ref_annotations,labeled=True)
-    ulabeled = eval_dataset(pred_annotations,ref_annotations,labeled=False)
+    labeled  = eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=alpha)
+    ulabeled = eval_dataset(pred_annotations,ref_annotations,labeled=False,alpha=alpha)
     
     print(f"""
 
@@ -236,7 +233,7 @@ def display_eval(pred_annotations,ref_annotations):
       Recall    : {labeled['spans']['strict']['r']} 
       F-score   : {labeled['spans']['strict']['f']}
 
-    RELAXED EVALUATION
+    RELAXED EVALUATION (\u03B1 = {alpha})
     > Argument mining spans (unlabeled)
       Precision : {ulabeled['spans']['relaxed']['p']} 
       Recall    : {ulabeled['spans']['relaxed']['r']}
@@ -261,7 +258,7 @@ def display_eval(pred_annotations,ref_annotations):
       Recall    : {labeled['rels']['strict']['r']} 
       F-score   : {labeled['rels']['strict']['f']}
 
-    RELAXED EVALUATION
+    RELAXED EVALUATION (\u03B1 = {alpha})
     > Argument mining spans (unlabeled)
       Precision : {ulabeled['rels']['relaxed']['p']} 
       Recall    : {ulabeled['rels']['relaxed']['r']}
@@ -283,17 +280,20 @@ if __name__ == '__main__':
 
     parser.add_argument('pred_file')
     parser.add_argument('ref_file')
-    parser.add_argument('--tsv',help="outputs the evaluation results in tsv format rather than by pretty printing") 
+    parser.add_argument('--alpha',default=0.5,type=float)
+    #parser.add_argument('--tsv',help="outputs the evaluation results in tsv format rather than by pretty printing")
     args = parser.parse_args()
 
     with open(args.pred_file) as preds_in:
         with open(args.ref_file) as ref_in:
+
             preds = json.loads(preds_in.read())
             refs = json.loads(ref_in.read())
-            #try:
-            display_eval(preds,refs)
-            #except Exception as e:
-            #    print('*',e)
+            
+            try:
+                display_eval(preds,refs,alpha=args.alpha)
+            except Exception as e:
+                print('[error]',e)
 
             
 

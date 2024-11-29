@@ -28,7 +28,7 @@ Just run the following on your machine:
 > sh download_data.sh
 ```
 
-## Viewing (todo)
+## Viewing
 
 The script `view_data.py` provides a pretty printing function for exploring the data
 
@@ -37,9 +37,9 @@ The script `view_data.py` provides a pretty printing function for exploring the 
 
 We reuse current practice in evaluation for argument mining described in [Eger et al (2017)](https://aclanthology.org/P17-1002/) and in [Persing and Ng (2016).](https://aclanthology.org/N16-1164.pdf)
 
-- strict evaluation
-- relaxed evaluation
-- fuzzy evaluation
+- *strict evaluation*. Computes f-score for spans and relations from the actual spans predicted by the model
+- *relaxed evaluation* Computes f-score for spans and relations but lets predicted spans to loosely match reference spans. 
+There is a match, at least $\alpha$ % of the tokens of the two spans actually match. By default $\alpha = 50$%
 
 
 ## Current datasets
