@@ -23,10 +23,10 @@ A dataset is a json file. Each dataset is a list of documents and each document 
 Just run the following on your machine:
 
 ```
-> cd data
 > git clone git@github.com:bencrabbe/argumentation_base.git
-> cd argumentation_base
+> cd argumentation_base/data
 > sh download_data.sh
+> cd ..
 ```
 
 ## Viewing
@@ -61,7 +61,7 @@ In other words, to evaluate your model you have to output json files such as  pr
 Two datasets are currently provided.
 
 - (aae) Argumentation Annotated Essays [(Stab and Gurevych 2017)](https://aclanthology.org/J17-3005.pdf)
-- (abstrct) Abstracts ofRandomized Controlled Trials [(Mayer et al. 2020)](https://ecai2020.eu/papers/1470_paper.pdf)
+- (abstrct) Abstracts of Randomized Controlled Trials [(Mayer et al. 2020)](https://ecai2020.eu/papers/1470_paper.pdf)
 
 
 
