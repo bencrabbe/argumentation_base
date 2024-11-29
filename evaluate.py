@@ -106,12 +106,10 @@ def get_spans(annotations,labeled=True):
      Returns:
        a set of pred spans as tuples. a set of ref spans as tuples
      """
-     if 'spans' in annotations:
-         
+     if 'spans' in annotations:         
          spans = annotations['spans']
+     else:
 
-         #else:
-         
          spans = [ ]
          current_lbl   = ''
          current_start = -1
@@ -190,12 +188,19 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=0.5):
 
     strict_span_scores  = [ ]
     aligned_span_scores = [ ]
-    strict_rel_scores  = [ ]
-    aligned_rel_scores = [ ]
+    strict_rel_scores   = [ ]
+    aligned_rel_scores  = [ ]
 
     for pred,ref in zip(pred_annotations,ref_annotations):
                     
         if 'tokens' in pred and 'tokens' in ref:
+            if len(pred['tokens']) != len(ref['tokens']):
+                raise Exception('pred data length is different from test data length. Different number of paragraphs in a document. aborting')
+            else:
+                for paragA,paragB in zip(pred['tokens'],ref['tokens']):
+                    if len(paragA) != len(paragB):
+                        raise Exception('pred data length is different from test data length. Different number of tokens in a paragraph. aborting')
+
             pred_spans         = get_spans(pred,labeled)
             ref_spans          = get_spans(ref,labeled)
             aligned_pred_spans = align_spans(pred_spans,ref_spans,alpha)
@@ -206,7 +211,7 @@ def eval_dataset(pred_annotations,ref_annotations,labeled=True,alpha=0.5):
                 ref_rels  = get_rels(ref,labeled)
                 aligned_pred_rels = align_rels(pred_rels,ref_rels,alpha)
                 strict_rel_scores.append( eval_rels(pred_rels,ref_rels) )
-                aligned_rel_scores.append( eval_rels(aligned_pred_rels,ref_rels)  )
+                aligned_rel_scores.append( eval_rels(aligned_pred_rels,ref_rels) )
                 
         else:
             raise Exception('The annotations do not contain a "tokens" field ! aborting.')
@@ -303,10 +308,10 @@ if __name__ == '__main__':
             preds = json.loads(preds_in.read())
             refs = json.loads(ref_in.read())
             
-            #try:
-            display_eval(preds,refs,alpha=args.alpha)
-            #except Exception as e:
-            #    print('[error]',e)
+            try:
+                display_eval(preds,refs,alpha=args.alpha)
+            except Exception as e:
+                print('[error]',e)
 
             
 
