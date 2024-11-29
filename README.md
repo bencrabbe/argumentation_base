@@ -51,6 +51,8 @@ The script is basically run as:
 ```
 python evaluate.py predfile.json testfile.json
 ```
+In other words, to evaluate your model you have to output json files such as  prediction file.
+
 
 
 
