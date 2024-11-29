@@ -44,7 +44,7 @@ We reuse current practice in evaluation for argument mining described in [Eger e
 
 - *strict evaluation*. Computes f-score for spans and relations from the actual spans predicted by the model
 - *relaxed evaluation* Computes f-score for spans and relations but lets predicted spans to loosely match reference spans. 
-There is a match, at least $\alpha$ % of the tokens of the two spans actually match. By default $\alpha = 50$%
+There is a match if at least $\alpha$ % of the tokens of the two spans actually match. By default $\alpha = 50$%
 
 The script is basically run as:
 
