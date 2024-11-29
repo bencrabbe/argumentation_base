@@ -23,6 +23,7 @@ A dataset is a json file. Each dataset is a list of documents and each document 
 Just run the following on your machine:
 
 ```
+> cd data
 > git clone git@github.com:bencrabbe/argumentation_base.git
 > cd argumentation_base
 > sh download_data.sh
