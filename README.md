@@ -31,16 +31,27 @@ Just run the following on your machine:
 
 ## Viewing
 
-The script `view_data.py` provides a pretty printing function for exploring the data
+The script `view_data.py` provides a pretty printing function for exploring the data. Run it as:
+
+```
+python view_data.py datafile.json
+```
 
 
-## Evaluation (todo)
 
+## Evaluation 
 We reuse current practice in evaluation for argument mining described in [Eger et al (2017)](https://aclanthology.org/P17-1002/) and in [Persing and Ng (2016).](https://aclanthology.org/N16-1164.pdf)
 
 - *strict evaluation*. Computes f-score for spans and relations from the actual spans predicted by the model
 - *relaxed evaluation* Computes f-score for spans and relations but lets predicted spans to loosely match reference spans. 
 There is a match, at least $\alpha$ % of the tokens of the two spans actually match. By default $\alpha = 50$%
+
+The script is basically run as:
+
+```
+python evaluate.py predfile.json testfile.json
+```
+
 
 
 ## Current datasets
