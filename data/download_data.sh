@@ -49,7 +49,7 @@ mv tmp/AbstRCT_corpus/data abstrct_brat
 rm -Rf tmp
 
 python brat_import.py abstrct_brat/train/neoplasm_train
-mv *.json abstrct_brat/data/train/neoplasm_train/
+mv *.json abstrct_brat/train/neoplasm_train/
 python brat_import.py abstrct_brat/dev/neoplasm_dev/
 mv *.json abstrct_brat/dev/neoplasm_dev/
 python brat_import.py abstrct_brat/test/neoplasm_test/
